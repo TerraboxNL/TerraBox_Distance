@@ -89,7 +89,7 @@ int16_t A02_UART_Auto::registerDistance() {
 //  serial->begin(9600);
 //  serial->write(1);
 //  delay(200);
-  while (serial->available() > 7){
+  while (serial->available() > 5){
 	  serial->read();
 //	  Serial.println(serial->read(), HEX); // Eat away any buffered characters
   }

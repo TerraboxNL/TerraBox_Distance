@@ -52,8 +52,8 @@
  *    A02  UART  version
  *
  *================================================================================================*/
-#define MEASUREMENT_TIMEOUT         900      // Measurement message read timeout in ms. 
-#define MAX_BYTES_TO_READ           8        // Max bytes to read in finding a 0xff header byte
+#define MEASUREMENT_TIMEOUT         900      // A02_UART normally delivers a message between 100-500 ms.
+#define MAX_BYTES_TO_READ           12        // Max bytes to read in finding a 0xff header byte
 
 
 /*=================================================================================================
@@ -64,6 +64,9 @@ class A02_UART : public DistanceSensor {
     HardwareSerial* serial;
 
   public:
+    long maxElapsed = 0;
+    long minElapsed = 999999;
+
     A02_UART(char *name, HardwareSerial* serial); // Create A02 driver using a specific Serial device
     A02_UART(char *name, uint32_t cycleTime, HardwareSerial* serial); // Create A02 driver using a specific Serial device
     A02_UART(char *name);                         // Create A02 driver using Serial1
@@ -74,12 +77,15 @@ class A02_UART : public DistanceSensor {
     void exec();
 //    virtual void end();
 
-    virtual int16_t registerDistance(); // Handles protocol and returns distance.
-                                        // >0 is distance,
-                                        // <0 is error.
-    virtual int16_t readDistance();     // Receives and decodes the distance message.
-                                        // >0 implies ok. The number represents the distance
-                                        // <0 implies some error.
+    void            flushBuffer();                  // Flushes the input buffer
+    int16_t         readFromBuffer(uint8_t* data);  // Extracts the last buffered message
+    int16_t         readFromSensor(uint8_t* data);  // Extracts 1st incoming message from the snesor
+    virtual int16_t registerDistance();             // Handles protocol and returns distance.
+                                                    // >0 is distance,
+                                                    // <0 is error.
+    virtual int16_t readDistance();                 // Receives and decodes the distance message.
+                                                    // >0 implies ok. The number represents the distance
+                                                    // <0 implies some error.
 };
 
 #endif

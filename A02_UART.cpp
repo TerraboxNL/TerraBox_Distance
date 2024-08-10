@@ -42,6 +42,7 @@
  *--------------------------------------------------------------------------*/
 #include <A02_UART.h>
 
+#define TRACE 0
 /*------------------------------------------------------------------------------------------------
  *
  *  Default UART type using Serial1
@@ -134,6 +135,226 @@ void A02_UART::exec() {
   }
 }
 
+/*-----------------------------------------------------------------------------
+ *
+ *  Flushes the input buffer as fast as possible
+ *
+ *---------------------------------------------------------------------------*/
+void A02_UART::flushBuffer() {
+  int16_t errNo  = 0;   // Success
+
+  #if TRACE_TIMES
+  long now       = 0;
+  long elapsed   = 0;
+  #endif
+
+
+  #if TRACE
+  Serial.println();
+  #endif
+
+  int16_t c = 0;
+
+  //
+  //  Flush the input buffer if there is buffered input...
+  //
+  if (Serial1.available()) {
+
+    #if TRACE
+    Serial.println("FLUSHING ....");
+    #endif
+    #if TRACE_TIMES
+    now = micros();
+    #endif
+
+    //
+    //  Empty the buffer and extract the complete message from it
+    //
+    int x = 0;
+    while ((c = Serial1.read()) >= 0 && Serial1.available()) {
+      x++;
+    }
+
+    #if TRACE_TIMES
+    elapsed = micros() - now;
+    #endif
+    #if TRACE_TIMES
+    Serial.print("]]]] FLUSHED [[[[ in ");Serial.print(elapsed);
+    Serial.print(" micros. ");
+      #if TRACE
+    Serial.print(x); Serial.println(" bytes");
+      #endif
+    #elif TRACE
+    Serial.print("]]]] FLUSHED [[[[ ");Serial.print(x); Serial.println(" bytes");
+    #endif
+  }
+
+}
+
+/*-----------------------------------------------------------------------------
+ *
+ *  Flushes the input buffer and extracts the last complete message
+ *
+ *  data      A 4 byte data buffer, which returns the last received message
+ *
+ *---------------------------------------------------------------------------*/
+int16_t A02_UART::readFromBuffer(uint8_t* data) {
+
+  #if TRACE_TIMES
+  long now       = 0;
+  long elapsed   = 0;
+  #endif
+
+
+  #if TRACE
+  Serial.println();
+  #endif
+
+  int16_t c = 0;
+
+  #if TRACE
+  Serial.println("== START ==>");
+  #endif
+
+  //
+  //  Flush the input buffer if there is buffered input...
+  //
+  if (Serial1.available()) {
+
+    #if TRACE
+    Serial.println("FLUSHING ....");
+    #endif
+    #if TRACE_TIMES
+    now = micros();
+    #endif
+
+    uint16_t x    = 0;
+    int bufferIdx = 0;
+    uint8_t msg1[4];
+    uint8_t msg2[4];
+    uint8_t* last      = msg1;
+    uint8_t* current   = msg2;
+    uint8_t* completed = nullptr;
+    uint8_t* tmp       = nullptr;
+
+    //
+    //  Empty the buffer and extract the complete message from it
+    //
+    while ((c = Serial1.read()) >= 0 && Serial1.available()) {
+
+ //     Serial.print("Read [");Serial.print(bufferIdx);Serial.print("] 0x"); Serial.println((uint8_t)c, HEX);
+
+      if (c == 0xff) {
+        //
+        // Only switch buffers if completed
+        //
+        if (bufferIdx == 4) {
+          // completed = nullptr
+          // current   = msg1
+          // last      = msg2
+          tmp       = current;   // tmp = msg1
+          current   = last;      // current = msg2
+          last      = tmp;       // last = msg1
+          // completed = nullptr
+          // current   = msg2
+          // last      = msg1
+        }
+        bufferIdx = 0;         // Reset the buffer index
+
+        //
+        //  Clear current buffer
+        //
+        for (int i = 0; i < 4; i++)
+          current[i] = 0;
+
+        current[bufferIdx++] = (uint8_t)c;
+      }
+      else {
+        current[bufferIdx++] = (uint8_t)c;
+
+        if (bufferIdx == 4) {
+          // completed = nullptr
+          // current   = msg2
+          // last      = msg1
+          completed = current;  // completed = msg2
+          // completed = msg2
+          // current   = msg2
+          // last      = msg1
+        }
+      }
+
+      x++;
+    }
+
+    #if TRACE
+    Serial.println("Completed message: ");
+    for (int i = 0; i < 4; i++) {
+      Serial.print("[");Serial.print(i);Serial.print("] 0x");Serial.println(completed[i], HEX);
+    }
+    Serial.println();
+    #endif
+
+   #if TRACE_TIMES
+    elapsed = micros() - now;
+    #endif
+    #if TRACE_TIMES
+    Serial.print("]]]] FLUSHED [[[[ in ");Serial.print(elapsed);
+    Serial.print(" micros. ");
+      #if TRACE
+    Serial.print(x); Serial.println(" bytes");
+      #endif
+    #elif TRACE
+    Serial.print("]]]] FLUSHED [[[[ ");Serial.print(x); Serial.println(" bytes");
+    #endif
+
+    //
+    //  If there is a completed message, then use that
+    //
+    if (completed) {
+
+      //
+      // Copy the message to the return buffer
+      //
+      #if TRACE
+      Serial.println("Copied buffer:");
+      #endif
+
+      for (int i = 0; i < 4; i++) {
+        data[i] = completed[i];
+        #if TRACE
+         Serial.print("["); Serial.print(i); Serial.print("] 0x"); Serial.println(data[i], HEX);
+        #endif
+     }
+
+      #if TRACE
+      Serial.println("<== END ==");
+      #endif
+
+      //
+      //  Calculate the checksum.
+      //  If not equal to the message checksum,
+      //  then return a 02 error code.
+      //
+      uint8_t CS = (uint8_t)(data[0] + data[1] + data[2]) & 0x00FF;
+      if (CS != completed[3])
+        return -2;
+
+      //
+      //  Checksum is OK
+      //  Calculate the distance and return that
+      //
+      return ((uint16_t)data[1] << 8) + (uint16_t)data[2];
+    }
+  }
+
+  //
+  // If no complete message was buffered, then return a zero.
+  // I.e. nothing there.
+  //
+  return 0;
+}
+
+
 /*--------------------------------------------------------------------------------------------------
  *
  *  Low level A02 distance message reader of UART type sensor.
@@ -160,6 +381,49 @@ void A02_UART::exec() {
  *------------------------------------------------------------------------------------------------*/
 int16_t A02_UART::readDistance() {      // Receives the requested distance measurement message.
 
+	  uint8_t data[4];
+	  int16_t distance = 0;
+
+	  long now = millis();
+
+	  //
+	  //  First try the buffered messages for distance measurment...
+	  //
+	  distance  = readFromBuffer(data);
+	  #if TRACE
+	    Serial.print("Distance from buffer message: "); Serial.println(distance);
+	  #endif
+
+	  //
+	  //  If no message there, then continue receiving frok the sensor...
+	  //  Since the buffer has been emptied we now read what is coming
+	  //  from the sensor.
+	  //  To be absolutely sure about that readFromSensor() flushes
+	  //  the buffer once more without processing what is in the buffer.
+	  //
+	  if (distance <= 0) {
+	    distance = readFromSensor(data);
+	  }
+
+	  long elapsed = millis() - now;
+	  if (elapsed > maxElapsed)
+	    maxElapsed = elapsed;
+
+	  if (elapsed < minElapsed)
+	    minElapsed = elapsed;
+
+      #if TRACE
+	  Serial.print("Distance measurement elapsed time: "); Serial.print(elapsed); Serial.print(" ms, return code: ");Serial.println(distance);
+      #endif
+
+	  #if SUMMARY_TIMES
+	  Serial.print("Elapsed time (min - max): "); Serial.print(elapsed);Serial.print(" (");Serial.print(minElepased); Serial.print(" - ");Serial.print(maxElapsed);Serial.println(" )");
+	  Serial.println();
+	  #endif
+
+	  return distance;
+
+/*
   uint8_t hByte = 0x00;
 
   //
@@ -231,13 +495,23 @@ int16_t A02_UART::readDistance() {      // Receives the requested distance measu
   // Read remaining 3 characters of data and insert into array
   //
   for (int i = 1; i < 4; i++) {
-    data_buffer[i] = serial->read();
+	//
+	//  This prevent wrong interpretation of the serial->read() return.
+	//  Since a (int16_t) -1 return, which could be interpreted
+	//  as a (uint8_t) 0xff will not occur anymore.
+	//
+    int16_t c = 0;
+	while ((c = serial->read()) == -1);
+	//
+	// Now we are sure that a genuine character has been read
+	//
+    data_buffer[i] = c;
   }
 
-//  Serial.print("[0] 0x"); Serial.println(data_buffer[0], HEX);
-//  Serial.print("[1] 0x"); Serial.println(data_buffer[1], HEX);
-//  Serial.print("[2] 0x"); Serial.println(data_buffer[2], HEX);
-//  Serial.print("[3] 0x"); Serial.println(data_buffer[3], HEX);
+  Serial.print("[0] 0x"); Serial.println(data_buffer[0], HEX);
+  Serial.print("[1] 0x"); Serial.println(data_buffer[1], HEX);
+  Serial.print("[2] 0x"); Serial.println(data_buffer[2], HEX);
+  Serial.print("[3] 0x"); Serial.println(data_buffer[3], HEX);
 
   //
   //Compute checksum
@@ -270,5 +544,140 @@ int16_t A02_UART::readDistance() {      // Receives the requested distance measu
   // Return the decoded distance
   //
   return d;
+*/
+}
 
+/*-----------------------------------------------------------------------------
+ *
+ *  Reads the first incoming message directly from the sensor.
+ *
+ *  data      4 byte data buffer in which message is returned
+ *
+ *  Return:   > 0 the distance measured
+ *            < 0 Error code
+ *
+ *---------------------------------------------------------------------------*/
+int16_t A02_UART::readFromSensor(uint8_t* data) {
+  int16_t errNo  = 0;   // Success
+
+  #if TRACE
+  Serial.println("== START ==>");
+  #endif
+
+  //
+  //  Flush the buffer contents first, ignoring all previous messages...
+  //
+  flushBuffer();
+
+  //
+  //  Start receiving the latest message...
+  //
+  #if TRACE_TIMES
+  now = millis();
+  #endif
+
+  //
+  // Wait for new message to arrive of which the first byte is 0xff
+  // Since Serial1.read() return -1 int16_t value
+  // USE a 16BIT variable with Serial.read(), NOT 8 BIT
+  // because the int -1 return value and byte 0x00ff are indistinguishable.
+  // Since we need to detect a 0xff byte as start of message header marker
+  // a -1 (noting to read) will actually be interpreted as the header marker.
+  //
+  int16_t c;
+  long now      = millis();
+  int byteCount = 0;
+  while ((c = Serial1.read()) != 0xff) {
+    if (c >= 0) {
+      //
+      // Otherwise increase the number of bytes used.
+	  // Worst case 0xff should be spotted at its latest as the 7th byte read.
+      //
+      byteCount++;
+
+      //
+      // If number of bytes used to synchronise is greater than MAX_BYTE_TO_READ
+      // return an error code for it.
+      //
+      if (byteCount >= MAX_BYTES_TO_READ) {
+        // Serial.print("No header byte containing 0xff was found.");
+        return -3;  // Time out occurred, while waiting for data bytes to arrive.
+      }
+    }
+
+	//
+	// If time passed is greater than MEASUREMENT_TIMEOUT, then return error code
+	//
+	if (byteCount == 0 && millis() - now > MEASUREMENT_TIMEOUT)
+	  return -1;  // Indicate false measurement
+
+  }
+
+  #if TRACE_TIMES
+  elapsed = millis()-now;
+  Serial.print("Waiting time till 0xff arrives (ms):"); Serial.println(elapsed);
+  Serial.println();
+  #if TRACE
+  Serial.print("[0] 0x"); Serial.println(c, HEX);
+  #endif
+  #elif TRACE
+  Serial.println();
+  Serial.print("[0] 0x"); Serial.println(c, HEX);
+  #endif
+
+  //
+  //  Store the 0xff message header
+  //
+  data[0] = (uint8_t)c;
+
+  //
+  //  Keep reading until we have a complete message
+  //
+  while (1) {
+
+    //
+    //  Read the remaining 3 message bytes to get
+    //  the message body and messahe checksum.
+    //
+    for (int x = 1; x < 4; x++) {
+      //
+      //  Wait for the next byte to read
+      //
+      while ((c = Serial1.read()) == -1) ;
+
+      //
+      //  If this is a 0xff, then the message is incomplete, so ABORT.
+      //
+      if (c == 0xff) {
+        #ifdef TRACE
+        Serial.print("[");Serial.print(x);Serial.print("] 0x"); Serial.print((uint8_t)c, HEX); Serial.println(", **** ABORT ****  Incomplete message, resync...");
+        #endif
+        break;  // incomplete message
+      }
+
+      //
+      //  Store the data body byte just read
+      //
+      #if TRACE
+      Serial.print("["); Serial.print(x); Serial.print("] 0x"); Serial.println(c, HEX);
+      #endif
+      data[x] = (uint8_t)c;
+
+    } // Message complete
+
+    uint8_t CS = (uint8_t)(data[0] + data[1] + data[2]) & 0x00FF;
+    if (CS != data[3])
+      errNo = -2;  // So error -2, which is invalid checksum
+
+    break;
+  }
+
+  #if TRACE
+  Serial.println("<== END ==");
+  #endif
+
+  if (errNo < 0)
+    return errNo;
+
+  return ((uint16_t)data[1] << 8) + (uint16_t)data[2];
 }
