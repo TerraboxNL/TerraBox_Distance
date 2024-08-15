@@ -12,7 +12,7 @@
 
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
-               <README.md> - Library for GUI widgets.
+               <README.md> - Library for Distance sensors.
                     Created by Cor Hofman, 09 Aug 2024
                        Released into the public domain
                      as GitHub project: TerraBox_Scheduler
@@ -79,6 +79,25 @@ The third version of the Pulse Width Modulation version of the sensor. Like the 
 
 The A02_PWM is therefore based on the A02_UART_Controlled as it inherits the wakeup and request logic. Reading the PWM signal is standard Arduino functionality. So the measurement message part is can be overridden easily by a simple measurement message implementation. 
 
+SimulatedDistanceSensor
+=======================
+This sensor does not support is not an actual physical sensor, but it is a simple simulation of a sensor. It merely generates values. Either random or in a sequence up or down.
+
+It inherits from the base class DistanceSensor. Like all other sensors. So once you'v got the proper sensor you simply replace this simulated sensor by a physical one and its corresponding supporting class version.
+
+The simulation has two constructors:
+
+``` C++
+SimulatedDistanceSensor(char* name, uint16_t type, uint16_t min, uint16_t max);
+SimulatedDistanceSensor(char* name, uint32_t cycleTime, uint16_t type, uint16_t min, uint16_t max);
+```
+- name		The task name
+- cycleTime	The interval at which measurements are read from the sensor
+- type		Specifies the behaviour by using the constants SIMU_TYPE_UP, SIMU_TYPE_DOWN or SIMU_TYPE_RANDOM
+- min		The minimum value it generates
+- max		The maximum value it generates
+
+  
 Typical Arduino sketch
 ======================
 The sketch can be found in the Arduino library under the name Scheduler_Example.ino in the folder named Scheduler_Example as well.
