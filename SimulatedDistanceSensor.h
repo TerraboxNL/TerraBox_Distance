@@ -13,8 +13,8 @@
 
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
-                <DistanceSensor.cpp> - Library for GUI widgets.
-                     Created by Cor Hofman, 01 Aug 2024
+          <SimulatedDistanceSensor.h> - Library for Distance sensors.
+                    Created by Cor Hofman, 11 Aug 2024
                        Released into the public domain
                      as GitHub project: TerraBox_Scheduler
                    under the GNU General public license V3.0
@@ -41,31 +41,36 @@
  *
  *--------------------------------------------------------------------------*/
 #include <DistanceSensor.h>
-#include <TaskScheduler.h>
 
-DistanceSensor::DistanceSensor(char* name) :
-                Task(name) {
-  // Does nothing
-}
+#ifndef SIMULATED_DISTANCE_SENSOR_H_
+#define SIMULATED_DISTANCE_SENSOR_H_
 
-DistanceSensor::DistanceSensor(char* name, uint32_t cycleTime) :
-                Task(name, cycleTime) {
-  // Does nothing
-}
-/*
-void DistanceSensor::begin() {
-  // Does nothing
-}
 
-void DistanceSensor::end() {
-  // Does nothing
-}
-*/
-void DistanceSensor::exec() {
-  distance = registerDistance();
-}
+#define SIMU_TYPE_UP          1
+#define SIMU_TYPE_DOWN        2
+#define SIMU_TYPE_RANDOM      3
 
-int16_t DistanceSensor::getDistance() {
-  return distance;
-}
+class SimulatedDistanceSensor : public DistanceSensor {
+  private:
+    uint16_t simulation;          // Use one of the SIMU_TYPE_* defines
+    int16_t animationLevel = 0;   // The simulated sensor value
+    int16_t simulatedLevel = 0;   // The simulated sensor value
+    uint16_t min;                 // Minimum sensor value
+    uint16_t max;                 // Maximum sensor value
 
+  public:
+	SimulatedDistanceSensor(char* name, uint16_t type, uint16_t min, uint16_t max);
+	SimulatedDistanceSensor(char* name, uint32_t cycleTime, uint16_t type, uint16_t min, uint16_t max);
+
+	virtual void begin();
+	virtual void end();
+
+	virtual int16_t registerDistance();
+
+	virtual void SimulatedDistanceSensor::setInitialTarget();
+    virtual void SimulatedDistanceSensor::guardTarget();
+	virtual void animate();
+
+};
+
+#endif

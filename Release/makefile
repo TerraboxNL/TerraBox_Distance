@@ -10,6 +10,7 @@ RM := rm -f
 -include sources.mk
 -include subdir.mk
 -include core/core/subdir.mk
+-include TerraBox_Distance.ino/subdir.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)

@@ -13,7 +13,7 @@
 
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
-               <${name}> - Library for GUI widgets.
+               <${name}> - Library for Distance sensors.
                     Created by Cor Hofman, ${date}
                        Released into the public domain
                      as GitHub project: TerraBox_Scheduler
