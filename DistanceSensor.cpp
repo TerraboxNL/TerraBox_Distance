@@ -14,9 +14,9 @@
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
                 <DistanceSensor.cpp> - Library for GUI widgets.
-                     Created by Cor Hofman, 01 Aug 2024
+                                 01 Aug 2024
                        Released into the public domain
-                     as GitHub project: TerraBox_Scheduler
+                     as GitHub project: TerraboxNL/TerraBox_Distance
                    under the GNU General public license V3.0
                           
       This program is free software: you can redistribute it and/or modify
@@ -61,11 +61,16 @@ void DistanceSensor::end() {
   // Does nothing
 }
 */
+
 void DistanceSensor::exec() {
-  distance = registerDistance();
+
 }
 
 int16_t DistanceSensor::getDistance() {
   return distance;
+}
+
+void DistanceSensor::setDistance(uint16_t d) {
+	distance = d;
 }
 

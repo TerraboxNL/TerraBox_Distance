@@ -14,9 +14,9 @@
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
                  <A02_UART_Auto.cpp> - Library for GUI widgets.
-                     Created by Cor Hofman, 01-Aug-2026
+                                01-Aug-2026
                        Released into the public domain
-                     as GitHub project: TerraBox_Scheduler
+                as GitHub project: TerraboxNL/TerraBox_Distance
                    under the GNU General public license V3.0
                           
       This program is free software: you can redistribute it and/or modify
@@ -63,13 +63,8 @@ A02_UART_Auto::A02_UART_Auto(char *name, uint32_t cycleTime) :
 }
 
 void A02_UART_Auto::begin() {
-//  Serial.println("Setting to 9600 Baud");
   serial->begin(9600);
   serial->write(1);
-}
-
-void A02_UART_Auto::exec() {
-  distance = registerDistance();
 }
 
 void A02_UART_Auto::end() {

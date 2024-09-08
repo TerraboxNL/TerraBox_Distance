@@ -14,9 +14,9 @@
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
             <DistanceSimulator.cpp> - Library for distance sensors.
-                    Created by Cor Hofman, 11 Aug 2024
+                                11 Aug 2024
                        Released into the public domain
-                     as GitHub project: TerraBox_Scheduler
+                as GitHub project: TerraboxNL/TerraBox_Scheduler
                    under the GNU General public license V3.0
                           
       This program is free software: you can redistribute it and/or modify

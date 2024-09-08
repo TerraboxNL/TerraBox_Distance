@@ -14,9 +14,9 @@
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
                <A02_UART_Auto.h> - Library for GUI widgets.
-                    Created by Cor Hofman, 01 Aug 2024
+                                 01 Aug 2024
                        Released into the public domain
-                     as GitHub project: TerraBox_Scheduler
+                as GitHub project: TerraboxNL/TerraBox_Scheduler
                    under the GNU General public license V3.0
                           
       This program is free software: you can redistribute it and/or modify
@@ -58,7 +58,7 @@ class A02_UART_Auto : public A02_UART {
 //	virtual ~A02_UART_Auto();
 
     virtual void begin();                // Initialises protocol for the UART send only protocol
-    virtual void exec();                 // Kick off a single measurement every x ms.
+//    virtual void exec();                 // Kick off a single measurement every x ms.
     virtual void end();
 
     virtual int16_t registerDistance();  // Delegates protocol, monitors wake up needs

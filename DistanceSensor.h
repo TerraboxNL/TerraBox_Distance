@@ -14,9 +14,9 @@
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
                  <DistanceSensor.h> - Library for GUI widgets.
-                     Created by Cor Hofman, 01 Aug 2024
+                               01 Aug 2024
                        Released into the public domain
-                     as GitHub project: TerraBox_Scheduler
+                as GitHub project: TerraboxNL/TerraBox_Distance
                    under the GNU General public license V3.0
                           
       This program is free software: you can redistribute it and/or modify
@@ -54,7 +54,6 @@ class DistanceSensor : public Task {
 	int16_t distance = 0;                // Has distance after invoking exec().
 	                                     // > 0 = valid distance
 	                                     // < 0 = sensor type depended error code
-
     DistanceSensor(char* name);
     DistanceSensor(char* name, uint32_t cycleTime);
 //    virtual ~DistanceSensor();
@@ -67,7 +66,7 @@ class DistanceSensor : public Task {
     virtual int16_t registerDistance();  // Handles protocol and Returns distance.
                                          // >0 is distance,
                                          // <0 is error.
-
+    virtual void    setDistance(uint16_t d);        // Assigns the distance measured
 };
 
 #endif

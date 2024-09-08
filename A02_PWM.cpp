@@ -13,10 +13,10 @@
 
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
-               <A02_PWM.cpp> - Library for GUI widgets.
-                    Created by Cor Hofman, 01 Aug 2024
+               <A02_PWM.cpp> - Library for GUI distance sensors.
+                                 01 Aug 2024
                        Released into the public domain
-                     as GitHub project: TerraBox_Scheduler
+                 as GitHub project: TerraboxNL/TerraBox_Distance
                    under the GNU General public license V3.0
                           
       This program is free software: you can redistribute it and/or modify

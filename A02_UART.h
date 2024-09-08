@@ -14,9 +14,9 @@
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
 
                    <A02_UART.h> - Library for GUI widgets.
-                     Created by Cor Hofman, 24 Aug 2024
+                                 24 Aug 2024
                        Released into the public domain
-                     as GitHub project: TerraBox_Scheduler
+               as GitHub project: TerraboxNL/TerraBox_Scheduler
                    under the GNU General public license V3.0
                           
       This program is free software: you can redistribute it and/or modify
@@ -86,6 +86,7 @@ class A02_UART : public DistanceSensor {
     virtual int16_t readDistance();                 // Receives and decodes the distance message.
                                                     // >0 implies ok. The number represents the distance
                                                     // <0 implies some error.
+    virtual int16_t getDistance();                  // Returns the distance after exec has run.
 };
 
 #endif
