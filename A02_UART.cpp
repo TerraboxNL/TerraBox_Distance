@@ -383,6 +383,9 @@ int16_t A02_UART::readFromBuffer(uint8_t* data) {
  *  -2   Corrupted message. Calculated checksum did not match the message checksum.
  *  -3   Read message bytes but a header byte was not found after reading MAX_BYTES_TO_READ
  *
+ *  Note 1: The field lastErrCode contains the most recent error code
+ *  Note 2: The field lastDistance contains the most recent distance read.
+ *
  *------------------------------------------------------------------------------------------------*/
 int16_t A02_UART::readDistance() {      // Receives the requested distance measurement message.
 
@@ -425,6 +428,20 @@ int16_t A02_UART::readDistance() {      // Receives the requested distance measu
 	  Serial.print(F("Elapsed time (min - max): ")); Serial.print(elapsed);Serial.print(F(" ("));Serial.print(minElepased); Serial.print(F(" - "));Serial.print(maxElapsed);Serial.println(F(" )"));
 	  Serial.println();
 	  #endif
+
+	  //
+	  //  Register the last error code or distance
+	  //  This can be used to return the last read distance
+	  //  in case of an error code
+	  //
+	  if (dist < 0) {
+		  lastErrCode    = dist;
+		  lastErrorTS    = millis();
+	  }
+	  else {
+		  lastDistance   = dist;
+		  lastDistanceTS = millis();
+	  }
 
 	  return dist;
 }

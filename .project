@@ -48,5 +48,10 @@
 			<type>2</type>
 			<locationURI>ECLIPSE_HOME/arduinoPlugin/packages/arduino/hardware/avr/1.8.6/variants/mega</locationURI>
 		</link>
+		<link>
+			<name>libraries/TerraBox_Widgets</name>
+			<type>2</type>
+			<location>/Users/corhofman/Documents/Arduino/libraries/TerraBox_Widgets</location>
+		</link>
 	</linkedResources>
 </projectDescription>

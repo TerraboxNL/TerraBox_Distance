@@ -7,7 +7,7 @@
       //   ////// //   // //   // //   //    //////    ////  //   //
 
      
-                    A R D U I N O   S C H E D U L E R
+                A R D U I N O   D I S T A N C E  S E N S O R S
 
 
                  (C) 2024, C. Hofman - cor.hofman@terrabox.nl
@@ -37,53 +37,102 @@ Releases
 Release v1.0.0-alpha:
 A first release containing A02 ultra sound base distance sensor. 
 Although it contains potential support for all the A02 versions of the sensor.
-Only the UART Auto version has currently been tested and functions correctly
+Only the UART Auto version has currently been tested and functions correctly.
+
+Release V1.0.0-beta:
+A first release containing A02 ultra sound base distance sensor. 
+Although it contains potential support for all the A02 versions of the sensor.
+Only the UART Auto version has currently been tested and functions correctly.
+
 
 Abstract
 ========
-In general this package is set up to contains Arduino support for distance sensors. The first supported sensor is of type A02. Specifically the UART Auto type. The other types UART Controlled and PWM versions have potential support, but it currently untested code.
-To manage the periodical readout of the sensors the TerraBox_Scheduler Arduino package is used.
-Basically every supported sensor is modelled as a Task, which enables it to be read periodically.
-
-
-A02_UART_Auto
-=============
-The sensor type uses the sensor type which continuously measure the distance. That is the sensor produces a constant stream of measurements on its Tx pin. This is the white wire on the A02 its connector. The Rx pin is permanently held high as is recommended by the Product specification sheet of the sensor.
-
-It inherits support for reading the transmitted measurement messages sent by the A02 Auto sensor.
-
-
-A02_UART
-========
-The class A02_UART is the base class for all UART types sensors, being A02 Auto and A02 Controlled. The measurement message sent by both sensors version are equal. The way how to get the sensor to generate the measurements messages differs.
-
-The A02 UART class is based on the generic DistanceSensor class.
+This package is set up to support distance sensors for the Arduino platform. The first supported sensor is of type A02. Specifically the UART Auto type. The other types UART Controlled and PWM versions have potential support, but it is untested code.
 
 DistanceSensor
 ==============
-Since the DistanceSensor is a generic class for any distance sensor, the only thing it knows is a distance is to be measured somehow. For that the class assumes a registerDistance() method, which is invoked from the Task::exec() method and store the measurement in the distance attribute.
-The getDistance() method support getting the last read distance.
+The DistanceSensor is a generic class modelling a range of distance sensors, the only thing it knows is that a distance is to be measured somehow and made available. For that the class assumes a registerDistance() function obtaining a distance from a sensor. Secondly it provide the getDistance() function which returns the distance measured to whatever caller object.
 
-The DistanceSensor, being the base class for all distance sensors, is based on the Task::Task(char* name, uint32_t cycleTime). See the TerraBox_Scheduler library README.md file for more details.
-The essence is that a Task is periodically scheduled by the TaskScheduler and as a result the exec() methods of the DistanceSensor class is invoked periodically.  
+Managing sensor data
+====================
+To manage the periodical readout of sensors the TerraBox_Scheduler package is used. The DistanceSensor inherits from the Task class, enabling time based scheduling. As a result the sensor measurement is read periodically. Since the DistanceSensor is the Base class for a lot of distance sensors this is an enabler for managing any sensor based on it. 
+The specified time interval determines how often sensor is accessed for a distance measurement. The resulting measurement can then be used multiple times by one or more processing tasks. The sensor read out interval can be controlled independently from other processing tasks. Modelling processing logic as a task as well provides an increased level of control. Because tasks can be postponed at will decreasing the CPU load. Creating different Tasks also enables you to separate concerns in your coding by using different tasks. For instance separating signal sensing, signal processing and GUI control. Which is a well known practice.
+At the end of this README.md document a rudimentary example is provided using two tasks. The sensor task and a visualisation task with which the measured distance is can visually be monitored.
+
+For more details about Tasks see the TerraBox_Scheduler library README.md file.
+
+Sensor DYP-A02 V2.0
+===================
+The A02 sensor type uses ultra sound to measure a distances expressed in millimetres. It exists in a water tight version. The area four version available. Switch, RS485, UART Automatic, UART Controlled and UART PWM. Note that the different behaviours of the types mentioned is not configurable. You have to order the specific type you need as it is configured by the manufacturer.
+It can operate on DC power from 3.3.V up to 5.0V
+
+The only type currently supported by this library is the Automatic type.
+Other types might be added later on.
+
+class A02_UART
+==============
+The class A02_UART is the base class for all A02_UART type sensors, being A02 Auto, A02 Controlled and A02_PWM. The measurement messages sent by the Auto and Controlled sensors are identical. The PWM sensor uses Pulse Width Modulation to transmit the measurements. The way how to request the sensor to generate the measurements messages differs. The Auto sensor uses a digital enable/disable signal. The other sensors share the use of an identical request message.
+
+All A02 sensors are based on the A02_UART class based. The A02_UART class, on its turn, is based on the generic DistanceSensor class.
+
+
+class A02_UART_Auto
+===================
+This automatic A02 sensor type measures the distance continuously and produces a constant stream of distance measurement messages. The A02 its Rx line is permanently held high. As is recommended by the Product specification sheet of the sensor.
+It inherits support for reading the transmitted measurement messages from the A02 UART class.
+
+How to connect, for instance to Serial1 on an Arduino Mega2560:
+- The Arduino pin TX1/pin 18 can be connected to A02 RX line (white wire). Connecting it to any Arduino Digital Output will work as well.
+- The Arduino pin RX1/pin 19 is connected to A02 TX line (yellow wire).
+- The Arduino +5 V is connected to the A02 red wire.
+- The Arduino GND is connected to the A02 black wire.
+ 
 
 A02_UART_Controlled
 ===================
-This is, like he A02_UART_Auto a UART based sensor. However where the measurement message is the same as sent by the A02_UART_Auto, the method to trigger the measurement differs. The controlled version is basically silent and does not sent any messages without a request. As a consequence a request has to be sent to the sensor for it to generate a single measurement message. Further it will only react to a request if the sensor is awake. So some form of watchdog is needed to make sure the sensor is awake and can receive the measurement request. To do all that some orchestration of these activities is needed. The A02_Controlled therefor is based on the A02_UART to receive and process the measurement message. On top of that the A02_UART_Controlled class adds the logic to wake up the sensor, of needed and to request a measurement. After which is waits for the measurement message to arrive, which is processed and produces the measured distance in millimetres.
+The controlled versions similar to the automatic one with respect to the measurement message. The method to trigger the measurement differs. The controlled version is basically silent and does not sent any messages without a request. The sensor also has a sleep mode. Minimising power consumption. So it will only react to a request if the sensor is awake. It needs some form of watchdog to make sure the sensor is awake and will react on a measurement request. To do all that some orchestration of these activities is needed on top of the capability of receiving a measurement message. The A02_Controlled therefor inherits the A02_UART its capability to receive and interpret the measurement message. On top of that the A02_UART_Controlled class adds the logic to wake up the sensor, if needed, and to request a single measurement. After which is waits for the measurement message to arrive, which is then processed and produces the measured distance.
 
-As said the A02_UART_Controlled is based upon the A02_UART class for its measurement message reading capabilities.
+Connect it to any Serial, for instance Serial1 on an Arduino Mega2560:
+- The Arduino pin TX1/pin 18 is be connected to A02 RX line (white wire).
+- The Arduino pin RX1/pin 19 is connected to A02 TX line (yellow wire).
+- The Arduino +5 V is connected to the A02 red wire.
+- The Arduino GND is connected to the A02 black wire.
+
 
 A02_PWM
 =======
-The third version of the Pulse Width Modulation version of the sensor. Like the A02_UART_Controlled sensor a request needs to be sent to the sensor in order for it to generate a PWM modulated distance value. The way in which to request the measurement is equal to that of the UART controlled version. Reading the PWM value is what differs from the UART Controlled version.
+The third version of the Pulse Width Modulation version of the sensor. Like the A02_UART_Controlled sensor needs a request to be sent to the sensor in order for it to generate a PWM modulated distance value. The way in which to request the measurement is equal to that of the UART controlled version. Reading the PWM value is what differs from the UART Controlled version.
 
-The A02_PWM is therefore based on the A02_UART_Controlled as it inherits the wakeup and request logic. Reading the PWM signal is standard Arduino functionality. So the measurement message part is can be overridden easily by a simple measurement message implementation. 
+The A02_PWM is therefore based on the A02_UART_Controlled as it inherits the wakeup and request logic. Reading the PWM signal is standard Arduino functionality. So the measurement message part is be overridden easily by a simple measurement message implementation. 
+
+Connect it to any Serial and PWM enabled pin, for instance Serial1 on an Arduino Mega2560:
+- The Arduino pin TX1/pin 18 is be connected to A02 RX line (white wire).
+- The Arduino pin DI/PWM/pin 10 is connected to A02 TX line (yellow wire).
+- The Arduino +5 V is connected to the A02 red wire.
+- The Arduino GND is connected to the A02 black wire.
+
+A02_Switch
+==========
+Not supported.
+
+This type will output dedicated signal levels on both the TX and RX lines, depending on a factory configured threshold distance. The factory default is 1.5 metres (i.e. 1500mm).
+
+The TX and RX levels:
+-TX == low  & RX == high if less than the threshold value.
+-TX == High & RX == low  if more than the threshold value.
+
+How to connect:
+- The the A02 TX line (yellow wire) must be connected to a Digital Input. 
+- The the A02 RX line (white wire) must be connected to a Digital Input. 
+- The Arduino +5 V is connected to the A02 red wire.
+- The Arduino GND is connected to the A02 black wire.
+
 
 SimulatedDistanceSensor
 =======================
-This sensor does not support is not an actual physical sensor, but it is a simple simulation of a sensor. It merely generates values. Either random or in a sequence up or down.
+This sensor does not support an actual physical sensor, but it is a simple simulation of a sensor. It merely generates artificial measurements. Either random or in an alternating up and down sequence.
 
-It inherits from the base class DistanceSensor. Like all other sensors. So once you'v got the proper sensor you simply replace this simulated sensor by a physical one and its corresponding supporting class version.
+It inherits from the base class DistanceSensor. It can therefore easily be used to test the application. Without the need for a physical sensor. Once the proper sensor has arrived in the mail  simply connect the physical sensor and replace the simulated sensor class by the one supporting the hardware sensor of choice.
 
 The simulation has two constructors:
 
@@ -103,13 +152,18 @@ Typical Arduino sketch
 The sketch can be found in the Arduino library under the name Scheduler_Example.ino in the folder named Scheduler_Example as well.
 
 ``` cpp
+#include <SimulatedDistanceSensor.h>
 #include <A02_UART_Auto.h>
 #include <TaskScheduler.h>
 
+
+//==========================================================================
 //
 //  Sketch monitors the distance measured...
 //  Sensor used: A02_UART_Auto
 //
+//==========================================================================
+
 class DistanceMonitor : public Task {
 
   private:
@@ -130,18 +184,30 @@ class DistanceMonitor : public Task {
     }
 
     //
-    //  Implementation of the monitoring logic. Printing the distance
+    //  Implementation of the monitoring logic. 
+    //  In this case only printing the distance
     //
     void exec() {
   
-       Serial.print("Distance: "); Serial.println(sensor->getDistance());
+       Serial.print("Distance: "); Serial.print(sensor->getDistance());Serial.println(" mm");
 
     }
 
 };
 
-A02_UART_Auto sensorAuto("A02 UART Auto sensor");
-DistanceMonitor monitor("Distance monitor", &sensorAuto);
+//
+//  Your sensor of choice.
+//
+#if 0
+SimulatedDistanceSensor sensor("Simulated test sensor", SIMU_TYPE_RANDOM, 0 - 100);
+#else
+A02_UART_Auto sensor("A02 UART Auto sensor");          // Create the A02 Auto sensor
+#endif
+
+//
+//  The monitor displaying the measured value
+//
+DistanceMonitor monitor("Distance monitor", &sensor);  // Create using the sensor read out
 
 void setup()
 {
@@ -149,19 +215,19 @@ void setup()
   while(!Serial);
 
   //
-  //  Since cycle times for both tasks are equal (5000 ms)
-  //  Run the sensor last, makes it the first task to execute
+  //  The cycle times for both tasks are equal (5000 ms)
+  //  invoking run() for the sensor last, makes it the first task to execute
   //  After which the monitor will run...
   //  Processing the sensor measured distance by printing it.
   //
-  scheduler.run(&monitor);     // Monitor run() first -> second in the TaskList
-  scheduler.run(&sensorAuto);  // Sensor run() second -> first in the TaskList
+  scheduler.run(&monitor);     // Make monitor runnable first, which makes it second in the TaskList
+  scheduler.run(&sensor);      // Make sensor runnable second, which make it first in the TaskList
 }
 
 //
-//  Execute the tasks
-//  1) Read a measurement
-//  2) Monitor the measurement
+//  Schedule the tasks
+//  1) Read a measurement from the sensor
+//  2) Process the measurement by the monitor
 //
 void loop()
 {
@@ -177,9 +243,7 @@ void loop()
 
 Example Output
 ==============
-Note that the times for the Hello world message shifts with 20 ms after the monitor has been invoked for the first time. Also note that the interval for Hello te execute is 5000 ms. Theinterval for the monitor is 15000 ms. So at the third 5000 ms interval the monitor and Hello tasks compete in getting scheduled at that interval first. Because the last run() Task is the first in the scheduling list it has higher priority. So the monitor runs first. Running the monitor takes 20 ms. So the Hello task is delayed in running that 20 ms and runs after 5020 ms instead of 5000.
-
-The scheduler uses the last actual start time of a Task + its interval times specified, all following cycles for the Hello task will actually be 5000 ms again. So the scheduler adapts the Task start times in such a way that the interval times are properly maintained.
+As can be seen, the distance is measured every 5 seconds by the sensor and printed by the monitor.
 
 ``` txt
 <SerialMonitorOutput>

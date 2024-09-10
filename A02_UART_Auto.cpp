@@ -91,14 +91,15 @@ int16_t A02_UART_Auto::registerDistance() {
 
   //
   //  Read a single distance measurement
+  //  If an error code was returned we return the last distance read.
   //
   int16_t d = readDistance();
 
   //
-  //  Close the Serial interface.
-  //  This avoids getting buffered messages
+  //  Return the most recent distance read
   //
-  // serial->end();
+  if (d < 0)
+	  d = lastDistance;
 
   //
   //  Return the distance read.

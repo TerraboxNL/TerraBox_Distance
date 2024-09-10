@@ -54,6 +54,12 @@ class DistanceSensor : public Task {
 	int16_t distance = 0;                // Has distance after invoking exec().
 	                                     // > 0 = valid distance
 	                                     // < 0 = sensor type depended error code
+
+	uint32_t lastDistanceTS   = 0;       // The time stamp of the valid distance read
+	uint32_t lastErrorTS      = 0;       // The time stamp of last error occurrence
+    int16_t  lastDistance     = 0;       // The last valid distance read
+    int16_t  lastErrCode      = 0;       // The last error code
+
     DistanceSensor(char* name);
     DistanceSensor(char* name, uint32_t cycleTime);
 //    virtual ~DistanceSensor();
