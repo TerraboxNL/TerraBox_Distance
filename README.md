@@ -34,7 +34,7 @@
 Releases
 ========
 
-Release v1.0.0-alpha:
+Release v1.0.0-beta.1:
 A first release containing A02 ultra sound base distance sensor. 
 Although it contains potential support for all the A02 versions of the sensor.
 Only the UART Auto version has currently been tested and functions correctly.
